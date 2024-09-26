@@ -108,8 +108,7 @@ public class UserController implements Controller {
     // database.
     // According to the Javalin documentation
     // (https://javalin.io/documentation#context),
-    // this calls result(jsonString), and also sets content type to json
-    ctx.json(matchingUsers);
+    // this calls result(jsonString), and also sets content type to jsonUserByCompany
 
     // Explicitly set the context status to OK
     ctx.status(HttpStatus.OK);

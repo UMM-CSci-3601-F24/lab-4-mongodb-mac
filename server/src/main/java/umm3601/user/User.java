@@ -1,6 +1,7 @@
 package umm3601.user;
 
-
+import org.mongojack.Id;
+import org.mongojack.ObjectId;
 
 // There are two examples of suppressing CheckStyle
 // warnings in this class. If you create new classes

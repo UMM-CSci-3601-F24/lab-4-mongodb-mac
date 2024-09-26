@@ -1,12 +1,12 @@
 package umm3601.todo;
 
+import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.regex;
 
-import static org.mockito.ArgumentMatchers.eq;
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -18,20 +18,28 @@ import org.mongojack.JacksonMongoCollection;
 
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Sorts;
+import com.mongodb.client.result.DeleteResult;
 
+import io.javalin.Javalin;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
 import io.javalin.http.NotFoundResponse;
+import umm3601.user.UserByCompany;
+import umm3601.Controller;
 
 
+public class TodoController implements Controller {
 
-public class TodoController {
   private final JacksonMongoCollection<Todo> todoCollection;
   static final String OWNER_KEY = "age";
   static final String STATUS_KEY = "company";
   static final String BODY_KEY = "role";
+
+  private static final String API_TODOS = "/api/todos";
+  private static final String API_TODO_BY_ID = "/api/todo/{id}";
   private static final String BODY_REGEX = "^(admin|editor|viewer)$";
+  public static final String CATEGORY_REGEX = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$";
  /**
    * Construct a controller for Todos.
    *
@@ -148,4 +156,99 @@ ArrayList<Todo> matchingTodos = todoCollection
     return sortingOrder;
   }
 
+  /**
+   * Add a new user using information from the context
+   * (as long as the information gives "legal" values to User fields)
+   *
+   * @param ctx a Javalin HTTP context that provides the user info
+   *            in the JSON body of the request
+   */
+  public void addNewTodo(Context ctx) {
+
+    String body = ctx.body();
+    Todo newTodo = ctx.bodyValidator(Todo.class)
+        .check(usr -> usr.owner != null && usr.owner.length() > 0,
+            "User must have a non-empty owner; body was " + body)
+        .check(usr -> usr.category.matches(CATEGORY_REGEX),
+            "User must have a legal category; body was " + body)
+        .check(usr -> usr.body.matches(BODY_REGEX),
+            "User must have a legal body; body was " + body)
+        .get();
+
+    // Generate a user avatar (you won't need this part for todos)
+
+
+    // Insert the new user into the database
+    todoCollection.insertOne(newTodo);
+
+    // Set the JSON response to be the `_id` of the newly created user.
+    // This gives the client the opportunity to know the ID of the new user,
+    // which it can use to perform further operations (e.g., display the user).
+    ctx.json(Map.of("id", newTodo._id));
+    // 201 (`HttpStatus.CREATED`) is the HTTP code for when we successfully
+    // create a new resource (a user in this case).
+    // See, e.g., https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+    // for a description of the various response codes.
+    ctx.status(HttpStatus.CREATED);
+  }
+    /**
+   * Delete the user specified by the `id` parameter in the request.
+   *
+   * @param ctx a Javalin HTTP context
+   */
+  public void deleteUser(Context ctx) {
+    String id = ctx.pathParam("id");
+    DeleteResult deleteResult = todoCollection.deleteOne(eq("_id", new ObjectId(id)));
+    // We should have deleted 1 or 0 users, depending on whether `id` is a valid
+    // user ID.
+    if (deleteResult.getDeletedCount() != 1) {
+      ctx.status(HttpStatus.NOT_FOUND);
+      throw new NotFoundResponse(
+          "Was unable to delete ID "
+              + id
+              + "; perhaps illegal ID or an ID for an item not in the system?");
+    }
+    ctx.status(HttpStatus.OK);
+  }
+  /**
+   * Setup routes for the `user` collection endpoints.
+   *
+   * These endpoints are:
+   * - `GET /api/users/:id`
+   * - Get the specified user
+   * - `GET /api/users?age=NUMBER&company=STRING&name=STRING`
+   * - List users, filtered using query parameters
+   * - `age`, `company`, and `name` are optional query parameters
+   * - `GET /api/usersByCompany`
+   * - Get user names and IDs, possibly filtered, grouped by company
+   * - `DELETE /api/users/:id`
+   * - Delete the specified user
+   * - `POST /api/users`
+   * - Create a new user
+   * - The user info is in the JSON body of the HTTP request
+   *
+   * GROUPS SHOULD CREATE THEIR OWN CONTROLLERS THAT IMPLEMENT THE
+   * `Controller` INTERFACE FOR WHATEVER DATA THEY'RE WORKING WITH.
+   * You'll then implement the `addRoutes` method for that controller,
+   * which will set up the routes for that data. The `Server#setupRoutes`
+   * method will then call `addRoutes` for each controller, which will
+   * add the routes for that controller's data.
+   *
+   * @param server         The Javalin server instance
+   * @param Controller The controller that handles the user endpoints
+   */
+  public void addRoutes(Javalin server) {
+    // Get the specified user
+    server.get(API_TODO_BY_ID, this::getTodo);
+
+    // List users, filtered using query parameters
+    server.get(API_TODOS, this::getTodos);
+
+    // Delete the specified user
+    // server.delete(API_TODO_BY_ID, this::deleteTodo);
+
+    // Add new user with the user info being in the JSON body
+    // of the HTTP request
+    server.post(API_TODOS, this::addNewTodo);
+  }
 }
