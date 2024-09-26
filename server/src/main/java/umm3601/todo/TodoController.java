@@ -25,7 +25,6 @@ import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
 import io.javalin.http.NotFoundResponse;
-import umm3601.user.UserByCompany;
 import umm3601.Controller;
 
 
@@ -72,7 +71,7 @@ public class TodoController implements Controller {
 
   /**
    * Set the JSON body of the response to be a list of all the users returned from
-   * the databasestatic final String AGE_KEY = "age";
+   * the database static final String AGE_KEY = "age";
   static final String COMPANY_KEY = "company";
   static final String ROLE_KEY = "role";
   static final String SORT_ORDER_KEY = "sortorder";

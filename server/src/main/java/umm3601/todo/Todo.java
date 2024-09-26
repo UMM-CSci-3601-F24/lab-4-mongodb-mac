@@ -4,6 +4,8 @@ import org.mongojack.ObjectId;
 
 @SuppressWarnings({"VisibilityModifier"})
 public class Todo {
+
+  @ObjectId @Id
   @SuppressWarnings({"MemberName"})
   public String _id;
 

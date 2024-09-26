@@ -104,6 +104,8 @@ public class UserController implements Controller {
         .sort(sortingOrder)
         .into(new ArrayList<>());
 
+    ctx.json(matchingUsers);
+
     // Set the JSON body of the response to be the list of users returned by the
     // database.
     // According to the Javalin documentation
