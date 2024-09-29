@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Todo } from './todo';
-import { environment } from '../../environments/environment';
+import { Todo, TodoOwner } from './todo-list/todo';
+import { environment } from '../environments/environment';
 import { map } from 'rxjs/operators';
 @Injectable({
   providedIn: 'root'
@@ -60,7 +60,7 @@ getTodoById(id: string): Observable<Todo> {
    * partial matches instead of waiting until we have a full string
    * to match against.
    *
-   * @param users the array of `Users` that we're filtering
+   * @param todos the array of `Users` that we're filtering
    * @param filters the map of key-value pairs used for the filtering
    * @returns an array of `Users` matching the given filters
    */
